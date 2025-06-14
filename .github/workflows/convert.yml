@@ -4,41 +4,57 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
-  workflow_dispatch:  # Trigger manually
+  workflow_dispatch: {}
 
 jobs:
   convert_config:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Ensure config.bu exists
-      run: |
-        if [ ! -f config.bu ]; then
-          echo "Error: config.bu file not found!"
-          exit 1
-        fi
+      - name: Ensure config.bu exists
+        run: |
+          if [ ! -f config.bu ]; then
+            echo "Error: config.bu file not found!"
+            exit 1
+          fi
 
-    - name: Set up Podman
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y podman
+      - name: Set up Podman
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman
 
-    - name: List files for debugging
-      run: ls -al
+      - name: List files for debugging
+        run: ls -al
 
-    - name: Run Podman command
-      run: |
-        podman run --interactive --rm quay.io/coreos/butane:release \
-          --pretty --strict < config.bu > transpiled_config.ign
+      - name: Run Podman command
+        run: |
+          podman run --interactive --rm quay.io/coreos/butane:release \
+            --pretty --strict < config.bu > transpiled_config.ign
 
-    - name: Upload transpiled_config.ign as artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: transpiled-config
-        path: transpiled_config.ign
+      - name: Upload transpiled_config.ign as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: transpiled-config
+          path: transpiled_config.ign
+
+  release:
+    runs-on: ubuntu-latest
+    needs: convert_config
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: transpiled-config
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: auto-release-${{ github.run_number }}
+          name: "Automated Release ${{ github.run_number }}"
+          body: "Automated release for commit ${{ github.sha }}"
+          files: transpiled_config.ign
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
