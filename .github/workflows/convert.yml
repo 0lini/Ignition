@@ -4,9 +4,13 @@ on:
   push:
     branches:
       - main
+    paths:
+      - config.bu
   pull_request:
     branches:
       - main
+    paths:
+      - config.bu
   workflow_dispatch:
 
 permissions:
@@ -17,28 +21,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
-      - name: Ensure config.bu exists
-        run: |
-          if [ ! -f config.bu ]; then
-            echo "Error: config.bu file not found!"
-            exit 1
-          fi
+      - name: Cache Podman packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-podman
+          restore-keys: |
+            ${{ runner.os }}-apt-podman
 
-      - name: Set up Podman
+      - name: Install Podman
         run: |
           sudo apt-get update
           sudo apt-get install -y podman
 
-      - name: Run Podman command
-        run: |
-          podman run --interactive --rm quay.io/coreos/butane:release \
-            --pretty --strict < config.bu > config.ign
+      - name: Cache Butane container image
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/containers
+          key: ${{ runner.os }}-butane-image
+          restore-keys: |
+            ${{ runner.os }}-butane-image
 
-      - name: Upload config.ign as artifact
-        uses: actions/upload-artifact@v4
+      - name: Pre-pull Butane image
+        run: podman pull quay.io/coreos/butane:release
+
+      - name: Convert config.bu to config.ign
+        run: podman run --rm quay.io/coreos/butane:release --pretty --strict < config.bu > config.ign
+
+      - uses: actions/upload-artifact@v4
         with:
           name: config
           path: config.ign
@@ -48,13 +60,11 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
           name: config
 
-      - name: Create or Update 'latest' GitHub Release
-        uses: softprops/action-gh-release@v2
+      - uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
           name: "Latest Automated Release"
