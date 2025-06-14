@@ -4,44 +4,48 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: {}
-
-permissions:
-  contents: write
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   convert_config:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-      - name: Ensure config.bu exists
-        run: |
-          if [ ! -f config.bu ]; then
-            echo "Error: config.bu file not found!"
-            exit 1
-          fi
+    - name: Ensure config.bu exists
+      run: |
+        if [ ! -f config.bu ]; then
+          echo "Error: config.bu file not found!"
+          exit 1
+        fi
 
-      - name: Substitute variables in config.bu
-        run: |
-          envsubst < config.bu > config.subst.bu
+    - name: Set up Podman
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y podman
 
-      - name: Set up Podman
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y podman
+    - name: Substitute variables in config.bu (using envsubst)
+      run: |
+        envsubst < config.bu > config.subst.bu
 
-      - name: Run Podman command
-        run: |
-          podman run --interactive --rm quay.io/coreos/butane:release \
-            --pretty --strict < config.subst.bu > config.ign
+    - name: List files for debugging
+      run: ls -al
 
-      - name: Upload config.ign as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: config
-          path: config.ign
+    - name: Run Podman command
+      run: |
+        podman run --interactive --rm quay.io/coreos/butane:release \
+          --pretty --strict < config.subst.bu > config.ign
+
+    - name: Upload config.ign as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: config
+        path: config.ign
 
   release:
     needs: convert_config
