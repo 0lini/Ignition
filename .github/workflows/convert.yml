@@ -38,7 +38,7 @@ jobs:
           --pretty --strict < config.bu > transpiled_config.ign
 
     - name: Upload transpiled_config.ign as artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: transpiled-config
         path: transpiled_config.ign
