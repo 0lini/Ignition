@@ -6,6 +6,9 @@ on:
       - main
   workflow_dispatch: {}
 
+permissions:
+  contents: write  # required for creating releases
+
 jobs:
   convert_config:
     runs-on: ubuntu-latest
@@ -40,8 +43,8 @@ jobs:
           path: transpiled_config.ign
 
   release:
-    runs-on: ubuntu-latest
     needs: convert_config
+    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Download artifact
