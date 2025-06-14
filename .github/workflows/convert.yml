@@ -7,7 +7,7 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: write  # required for creating releases
+  contents: write
 
 jobs:
   convert_config:
@@ -23,24 +23,25 @@ jobs:
             exit 1
           fi
 
+      - name: Fill in repo variable in config.bu
+        run: |
+          sed -i "s|\${REPO_NAME}|${{ github.repository }}|g" config.bu
+
       - name: Set up Podman
         run: |
           sudo apt-get update
           sudo apt-get install -y podman
 
-      - name: List files for debugging
-        run: ls -al
-
       - name: Run Podman command
         run: |
           podman run --interactive --rm quay.io/coreos/butane:release \
-            --pretty --strict < config.bu > transpiled_config.ign
+            --pretty --strict < config.bu > config.ign
 
-      - name: Upload transpiled_config.ign as artifact
+      - name: Upload config.ign as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: transpiled-config
-          path: transpiled_config.ign
+          name: config
+          path: config.ign
 
   release:
     needs: convert_config
@@ -50,14 +51,16 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: transpiled-config
+          name: config
 
-      - name: Create GitHub Release
+      - name: Create or Update 'latest' GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: auto-release-${{ github.run_number }}
-          name: "Automated Release ${{ github.run_number }}"
+          tag_name: latest
+          name: "Latest Automated Release"
           body: "Automated release for commit ${{ github.sha }}"
-          files: transpiled_config.ign
+          files: config.ign
+          prerelease: false
+          draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
