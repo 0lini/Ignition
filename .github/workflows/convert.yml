@@ -32,17 +32,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y podman
 
-      - name: Substitute variables in config.bu (using envsubst)
-        run: |
-          envsubst < config.bu > config.subst.bu
-
-      - name: List files for debugging
-        run: ls -al
-
       - name: Run Podman command
         run: |
           podman run --interactive --rm quay.io/coreos/butane:release \
-            --pretty --strict < config.subst.bu > config.ign
+            --pretty --strict < config.bu > config.ign
 
       - name: Upload config.ign as artifact
         uses: actions/upload-artifact@v4
