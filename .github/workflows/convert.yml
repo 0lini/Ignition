@@ -23,9 +23,9 @@ jobs:
             exit 1
           fi
 
-      - name: Fill in repo variable in config.bu
+      - name: Substitute variables in config.bu
         run: |
-          sed -i "s|\${REPO_NAME}|${{ github.repository }}|g" config.bu
+          envsubst < config.bu > config.subst.bu
 
       - name: Set up Podman
         run: |
@@ -35,7 +35,7 @@ jobs:
       - name: Run Podman command
         run: |
           podman run --interactive --rm quay.io/coreos/butane:release \
-            --pretty --strict < config.bu > config.ign
+            --pretty --strict < config.subst.bu > config.ign
 
       - name: Upload config.ign as artifact
         uses: actions/upload-artifact@v4
@@ -60,7 +60,5 @@ jobs:
           name: "Latest Automated Release"
           body: "Automated release for commit ${{ github.sha }}"
           files: config.ign
-          prerelease: false
-          draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
