@@ -4,4 +4,4 @@ passwd:
   users:
     - name: core
       ssh_authorized_keys:
-        - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIByq4hwBRkbnxrPcd6yjqnyHNRi0GGJyV5R0CsCJMtFi CoreOS
+        - ${SSH_PUBLIC_KEY}
