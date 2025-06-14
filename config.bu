@@ -4,7 +4,7 @@ passwd:
   users:
     - name: core
       ssh_authorized_keys:
-        - ${SSH_PUBLIC_KEY}
+        - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAV8j8tHPBXj/H1Dp5Pnpu6DYlMzgy7KULK0s33jgrrY core
 systemd:
   units:
     # Install Docker CE
