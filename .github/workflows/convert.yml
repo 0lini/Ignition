@@ -4,13 +4,9 @@ on:
   push:
     branches:
       - main
-    paths:
-      - config.bu
   pull_request:
     branches:
       - main
-    paths:
-      - config.bu
   workflow_dispatch:
 
 permissions:
@@ -21,36 +17,24 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-      - name: Cache Podman packages
-        uses: actions/cache@v4
-        with:
-          path: /var/cache/apt/archives
-          key: ${{ runner.os }}-apt-podman
-          restore-keys: |
-            ${{ runner.os }}-apt-podman
-
-      - name: Install Podman
+      - name: Set up Podman
         run: |
           sudo apt-get update
           sudo apt-get install -y podman
 
-      - name: Cache Butane container image
-        uses: actions/cache@v4
-        with:
-          path: ~/.local/share/containers
-          key: ${{ runner.os }}-butane-image
-          restore-keys: |
-            ${{ runner.os }}-butane-image
+      - name: List files for debugging
+        run: ls -al
 
-      - name: Pre-pull Butane image
-        run: podman pull quay.io/coreos/butane:release
+      - name: Run Podman command
+        run: |
+          podman run --interactive --rm quay.io/coreos/butane:release \
+            --pretty --strict < config.bu > config.ign
 
-      - name: Convert config.bu to config.ign
-        run: podman run --rm quay.io/coreos/butane:release --pretty --strict < config.bu > config.ign
-
-      - uses: actions/upload-artifact@v4
+      - name: Upload config.ign as artifact
+        uses: actions/upload-artifact@v4
         with:
           name: config
           path: config.ign
@@ -60,11 +44,13 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/download-artifact@v4
+      - name: Download artifact
+        uses: actions/download-artifact@v4
         with:
           name: config
 
-      - uses: softprops/action-gh-release@v2
+      - name: Create or Update 'latest' GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
           name: "Latest Automated Release"
