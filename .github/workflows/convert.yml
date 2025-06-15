@@ -24,13 +24,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Ensure config.bu exists
-        run: |
-          if [ ! -f config.bu ]; then
-            echo "Error: config.bu file not found!"
-            exit 1
-          fi
-
       - name: Set up Podman
         run: |
           sudo apt-get update
