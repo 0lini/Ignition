@@ -4,9 +4,13 @@ on:
   push:
     branches:
       - main
+    paths:
+      - config.bu
   pull_request:
     branches:
       - main
+    paths:
+      - config.bu
   workflow_dispatch:
 
 permissions:
