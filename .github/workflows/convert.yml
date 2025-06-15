@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Ensure config.bu exists
         run: |
@@ -58,7 +58,7 @@ jobs:
           name: config
 
       - name: Create or Update 'latest' GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v4
         with:
           tag_name: latest
           name: "Latest Automated Release"
